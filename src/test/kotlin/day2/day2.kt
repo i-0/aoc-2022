@@ -1,139 +1,158 @@
 package day2
 
+import day2.Parser.parseShapes
+import day2.Parser.parseStrategy
+import day2.Result.*
+import day2.Shapes.*
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
-typealias Symbol = String
-
-enum class ExpectedSymbol(val symbol: Symbol) {
-    Rock("A"),
-    Paper("B"),
-    Scissor("C");
-}
-
-enum class RecommendedSymbol(val symbol: Symbol) {
-    Rock("X"),
-    Paper("Y"),
-    Scissor("Z")
-}
-
-data class Round(val expectedSymbol: Symbol, val recommendedSymbol: Symbol)
-
-private fun parse(input: String): List<Round> =
-    input.lines().map { line ->
-        val tuple: List<String> = line.split(" ")
-        val expectedSymbol = tuple.first()
-        val recommendedSymbol = tuple.last()
-        Round(expectedSymbol, recommendedSymbol)
-    }
-
 class Day2Tests {
     @Test
-    fun `day 2 result test`() {
-        val parsed: List<Round> = parse(input)
-        val finalScore = parsed.sumOf { totalScore(it) }
-        finalScore shouldBe -1
-    }
-
-    private fun totalScore(round: Round): Int {
-        val score = baseScore(round) + score(round)
-        println("$round: $score")
-        return score
-    }
-
-    @Test
-    fun exampleTest() {
-
-        val input = """
+    fun `symbolic approach test`() {
+        val inputSmall = """
             A Y
             B X
             C Z
         """.trimIndent()
-        val parsed = parse(input)
-        parsed.forEach { totalScore(it) }
-        val score = parsed.sumOf { totalScore(it) }
-        score shouldBe 15
-    }
-
-    @Test
-    fun `parsing input`() {
-        val input = """
-            A Y
-            B X
-            C Z
-        """.trimIndent()
-        val parsed: List<Round> = parse(input)
-        parsed shouldBe listOf(
-            Round("A", "Y"),
-            Round("B", "X"),
-            Round("C", "Z")
+        val shapes: List<Pair<Shape, Shape>> = parseShapes(inputSmall)
+        shapes shouldBe listOf(
+            Rock to Paper,
+            Paper to Rock,
+            Scissor to Scissor
         )
+
+        // part 1
+        val score = shapes.sumOf { baseScore(it.second) + score(it) }
+        score shouldBe 15
+
+        // part 2
+        val strategy: List<Pair<Shape, Result>> = parseStrategy(inputSmall)
+        strategy shouldBe listOf(
+            Rock to Draw,   // -> Rock
+            Paper to Loose, // -> Rock
+            Scissor to Win  // -> Rock
+        )
+
+        val shapesForStrategy: List<Pair<Shape, Shape>> = strategy.map { translate(it) }
+        shapesForStrategy shouldBe listOf(
+            Rock to Rock,   // Draw
+            Paper to Rock,  // Loose
+            Scissor to Rock // Win
+        )
+
+        shapesForStrategy.sumOf { baseScore(it.second) + score(it) } shouldBe 12
+
+        parseStrategy(input)
+            .map { translate(it) }
+            .sumOf { baseScore(it.second) + score(it) } shouldBe 14470 // result part 2
     }
 
-    @Test
-    fun `base score for single round`() {
-        baseScore(Round("A", "X")) shouldBe 1
-        baseScore(Round("B", "Y")) shouldBe 2
-        baseScore(Round("C", "Z")) shouldBe 3
-    }
+}
 
-    @Test
-    fun `win score for single round`() {
-        score(Round("A", "Y")) shouldBe 6
-        score(Round("B", "Z")) shouldBe 6
-        score(Round("C", "X")) shouldBe 6
-    }
+sealed class Result {
+    object Win : Result()
+    object Draw : Result()
+    object Loose : Result()
+}
 
-    @Test
-    fun `draw scrore for single round`() {
-        score(Round("A", "X")) shouldBe 3
-        score(Round("B", "Y")) shouldBe 3
-        score(Round("C", "Z")) shouldBe 3
-    }
+interface Shape : Vulnerability
 
-    @Test
-    fun `loose score for single round`() {
-        score(Round("A", "Z")) shouldBe 0
-        score(Round("B", "X")) shouldBe 0
-        score(Round("C", "Y")) shouldBe 0
-    }
+private fun Shape.beats(): Shape =
+    listOf(Rock, Paper, Scissor)
+        .minus(this)
+        .first { it.isVulnerable() == this }
 
-    private fun score(round: Round): Int {
-        val score = when {
-            win(round) -> 6
-            draw(round) -> 3
-            else -> 0
+interface Vulnerability {
+    fun isVulnerable(): Shape
+}
+
+sealed class Shapes {
+    object Rock : Shape {
+        override fun isVulnerable(): Shape {
+            return Paper
         }
-        return score
     }
 
-    private fun win(round: Round): Boolean =
-        when (round) {
-            Round("A", "Y"),
-            Round("B", "Z"),
-            Round("C", "X") -> true
-
-            else -> false
+    object Paper : Shape {
+        override fun isVulnerable(): Shape {
+            return Scissor
         }
+    }
 
-    private fun draw(round: Round): Boolean =
-        when (round) {
-            Round("A", "X"),
-            Round("B", "Y"),
-            Round("C", "Z") -> true
-
-            else -> false
+    object Scissor : Shape {
+        override fun isVulnerable(): Shape {
+            return Rock
         }
+    }
+}
 
-    private fun baseScore(round: Round) = when (round.recommendedSymbol) {
-        "X" -> 1
-        "Y" -> 2
-        "Z" -> 3
+private fun String.toResult(): Result =
+    when (this) {
+        "X" -> Loose
+        "Y" -> Draw
+        "Z" -> Win
         else -> throw IllegalArgumentException()
     }
 
-    private val input =
-        """
+object Parser {
+    fun parseShapes(input: String): List<Pair<Shape, Shape>> {
+        return input.lines().map { line ->
+            val tuple: List<String> = line.split(" ")
+            val first = tuple.first()
+            val second = tuple.last()
+            first.toShape() to second.toShape()
+        }
+    }
+
+
+    fun parseStrategy(input: String): List<Pair<Shape, Result>> {
+        return input.lines().map { line ->
+            val tuple: List<String> = line.split(" ")
+            val first = tuple.first()
+            val second = tuple.last()
+            first.toShape() to second.toResult()
+        }
+    }
+}
+
+private fun translate(strategy: Pair<Shape, Result>): Pair<Shape, Shape> {
+    return when (strategy.second) {
+        Draw -> strategy.first to strategy.first
+        Loose -> strategy.first to strategy.first.beats()
+        Win -> strategy.first to strategy.first.isVulnerable()
+    }
+}
+
+private fun String.toShape(): Shape =
+    when (this) {
+        "A", "X" -> Rock
+        "B", "Y" -> Paper
+        "C", "Z" -> Scissor
+        else -> throw IllegalArgumentException()
+    }
+
+private fun score(round: Pair<Shape, Shape>): Int {
+    val opponent = round.first
+    val answer = round.second
+    return when {
+        opponent == answer -> 3                // draw
+        opponent.isVulnerable() == answer -> 6 // win
+        answer.isVulnerable() == opponent -> 0 // looses
+        else -> throw IllegalArgumentException()
+    }
+}
+
+fun baseScore(shape: Shape): Int =
+    when (shape) {
+        Rock -> 1
+        Paper -> 2
+        Scissor -> 3
+        else -> throw IllegalArgumentException()
+    }
+
+private val input =
+    """
         C X
         A Y
         C Z
@@ -2635,4 +2654,3 @@ class Day2Tests {
         A Z
         A Y
     """.trimIndent()
-}
