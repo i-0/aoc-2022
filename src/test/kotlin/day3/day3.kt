@@ -23,16 +23,6 @@ object Parser {
         }
 }
 
-private fun toCode(it: Char): Int {
-    var offset: Int
-    if (it in ('a'..'z')) {
-        offset = -96
-    } else {
-        offset = -38
-    }
-    return it.code + offset
-}
-
 fun findSharedItems(rucksacks: List<Rucksack>): List<Char> =
     rucksacks.map {
         val set1 = it.first.toSet()
@@ -42,12 +32,22 @@ fun findSharedItems(rucksacks: List<Rucksack>): List<Char> =
     }
 
 
+private fun toCode(it: Char): Int {
+    var offset: Int
+    if (it in ('a'..'z')) {
+        offset = -96 // non-caps offset
+    } else {
+        offset = -38 // caps offset
+    }
+    return it.code + offset
+}
+
 // ----------------------------------------------------
 // tests
 // ----------------------------------------------------
 class Day3Tests {
     @Test
-    fun `test first`() {
+    fun `part 1`() {
         val inputSmall = """
            vJrwpWtwJgWrhcsFMMfFFhFp
            jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -96,6 +96,11 @@ class Day3Tests {
         println(codes2)
         val sum2 = codes2.sum()
         sum2 shouldBe 8153 //solution part 1
+    }
+
+    @Test
+    internal fun part2() {
+
     }
 }
 
