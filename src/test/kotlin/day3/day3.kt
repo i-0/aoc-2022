@@ -100,7 +100,20 @@ class Day3Tests {
 
     @Test
     internal fun part2() {
+        val inputSmall = """
+            vJrwpWtwJgWrhcsFMMfFFhFp
+            jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+            PmmdzqPrVvPwwTWBwg
+            wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+            ttgJtRGJQctTZtZT
+            CrZsJsPPZsGzwwsLwLmpwMDw
+        """.trimIndent()
 
+        val parsed = parseIntoGroupsOfThree(inputSmall)
+    }
+
+    private fun parseIntoGroupsOfThree(inputSmall: String): List<Rucksack> {
+        TODO("Not yet implemented")
     }
 }
 
