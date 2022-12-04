@@ -1,15 +1,18 @@
 package day3
 
+import day3.Decoder.toCode
+import day3.Lookup.findBadges
+import day3.Lookup.findSharedItems
 import day3.Parser.parse
+import day3.Parser.parseIntoGroupsOfThree
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
-
 
 // ----------------------------------------------------
 // data
 // ----------------------------------------------------
 typealias Rucksack = Pair<String, String>
-
+typealias ThreeRucksacks = List<String>
 
 // ----------------------------------------------------
 // algo
@@ -21,38 +24,40 @@ object Parser {
             val second = it.substring(it.length / 2, it.length)
             first to second
         }
+    fun parseIntoGroupsOfThree(inputSmall: String): List<ThreeRucksacks> =
+        inputSmall.lines().chunked(3)
 }
 
-private fun findBadges(rucksacks: List<List<String>>): List<Char> {
-    return rucksacks.map {
-        val rs1: Set<Char> = it[0].toSet()
-        val rs2: Set<Char> = it[1].toSet()
-        val rs3: Set<Char> = it[2].toSet()
-        val intersect1 = rs1.intersect(rs2)
-        val intersect2 = rs2.intersect(rs3)
-        intersect1.intersect(intersect2).first()
+object Lookup {
+    fun findSharedItems(rucksacks: List<Rucksack>): List<Char> =
+        rucksacks.map {
+            val set1: Set<Char> = it.first.toSet()
+            val set2: Set<Char> = it.second.toSet()
+            val intersect = set1.intersect(set2)
+            intersect.first()
+        }
+
+    fun findBadges(rucksacks: List<ThreeRucksacks>): List<Char> {
+        return rucksacks.map {
+            val rs1: Set<Char> = it[0].toSet()
+            val rs2: Set<Char> = it[1].toSet()
+            val rs3: Set<Char> = it[2].toSet()
+            val group1 = rs1.intersect(rs2)
+            val group2 = rs2.intersect(rs3)
+            group1.intersect(group2).first()
+        }
     }
 }
 
-private fun parseIntoGroupsOfThree(inputSmall: String): List<List<String>> =
-    inputSmall.lines().chunked(3)
-
-fun findSharedItems(rucksacks: List<Rucksack>): List<Char> =
-    rucksacks.map {
-        val set1: Set<Char> = it.first.toSet()
-        val set2: Set<Char> = it.second.toSet()
-        val intersect = set1.intersect(set2)
-        intersect.first()
+object Decoder {
+    fun toCode(it: Char): Int {
+        val offset: Int = if (it in ('a'..'z')) {
+            -96 // non-caps offset
+        } else {
+            -38 // caps offset
+        }
+        return it.code + offset
     }
-
-
-private fun toCode(it: Char): Int {
-    val offset: Int = if (it in ('a'..'z')) {
-        -96 // non-caps offset
-    } else {
-        -38 // caps offset
-    }
-    return it.code + offset
 }
 
 // ----------------------------------------------------
