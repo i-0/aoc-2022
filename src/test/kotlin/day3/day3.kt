@@ -25,8 +25,8 @@ object Parser {
 
 fun findSharedItems(rucksacks: List<Rucksack>): List<Char> =
     rucksacks.map {
-        val set1 = it.first.toSet()
-        val set2 = it.second.toSet()
+        val set1: Set<Char> = it.first.toSet()
+        val set2: Set<Char> = it.second.toSet()
         val intersect = set1.intersect(set2)
         intersect.first()
     }
@@ -99,7 +99,7 @@ class Day3Tests {
     }
 
     @Test
-    internal fun part2() {
+    fun part2() {
         val inputSmall = """
             vJrwpWtwJgWrhcsFMMfFFhFp
             jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
@@ -109,14 +109,68 @@ class Day3Tests {
             CrZsJsPPZsGzwwsLwLmpwMDw
         """.trimIndent()
 
-        val parsed = parseIntoGroupsOfThree(inputSmall)
+        val parsed: List<List<String>> = parseIntoGroupsOfThree(inputSmall)
+        parsed shouldBe listOf(
+            listOf(
+                "vJrwpWtwJgWrhcsFMMfFFhFp",
+                "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+                "PmmdzqPrVvPwwTWBwg"
+            ),
+            listOf(
+                "wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn",
+                "ttgJtRGJQctTZtZT",
+                "CrZsJsPPZsGzwwsLwLmpwMDw"
+            )
+        )
+
+        val shared: List<Char> = findBadges(parsed)
+
+        shared shouldBe listOf(
+            'r',
+            'Z'
+        )
+
+        val codes = shared.map { toCode(it) }.sum()
+        codes shouldBe 70
+
+        // part 2
+        findBadges(parseIntoGroupsOfThree(input)).map{toCode(it)}.sum() shouldBe -1
+
+
     }
 
-    private fun parseIntoGroupsOfThree(inputSmall: String): List<Rucksack> {
-        TODO("Not yet implemented")
+    private fun findBadges(rucksacks: List<List<String>>): List<Char> {
+        return rucksacks.map {
+            val rs1: Set<Char> = it[0].toSet()
+            val rs2: Set<Char> = it[1].toSet()
+            val rs3: Set<Char> = it[2].toSet()
+            val intersect1 = rs1.intersect(rs2)
+            val intersect2 = rs2.intersect(rs3)
+            intersect1.intersect(intersect2).first()
+        }
+    }
+
+    private fun parseIntoGroupsOfThree(input: String): List<List<String>> {
+        val lines: List<String> = input.lines()
+        var result: List<List<String>> = emptyList()
+        val steps = lines.size / 3
+        var i = 0
+        while (i < steps) {
+            val take: List<String> = lines.drop(i * 3).take(3)
+            result = result + listOf(take)
+            i++
+        }
+        return result
+    }
+
+    private fun parseIntoGroupsOfThree_(inputSmall: String): List<List<String>> {
+        val sequence: Sequence<List<String>> =
+            sequence {
+                yieldAll(generateSequence(inputSmall.lines()) { it.take(3) })
+            }
+        return sequence.toList()
     }
 }
-
 
 val input = """
 VdzVHmNpdVmBBCpmQLTNfTtMhMJnhFhTTf
