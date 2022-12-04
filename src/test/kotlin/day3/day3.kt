@@ -143,7 +143,7 @@ class Day3Tests {
             'Z'
         )
 
-        val codes = shared.map { toCode(it) }.sum()
+        val codes = shared.sumOf { toCode(it) }
         codes shouldBe 70
 
         // part 2
